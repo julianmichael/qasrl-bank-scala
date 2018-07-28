@@ -5,7 +5,7 @@ import ammonite.ops._
 
 val thisScalaVersion = "2.12.6"
 val thisScalaJSVersion = "0.6.23"
-val thisPublishVersion = "0.1.0-SNAPSHOT"
+val thisPublishVersion = "0.1.0"
 
 val macroParadiseVersion = "2.1.0"
 val kindProjectorVersion = "0.9.4"
@@ -49,9 +49,9 @@ trait CommonModule extends ScalaModule with ScalafmtModule with PublishModule {
   def pomSettings = PomSettings(
     description = artifactName(),
     organization = "org.julianmichael",
-    url = "https://github.com/julianmichael/qasrl-bank",
+    url = "https://github.com/julianmichael/qasrl-bank-scala",
     licenses = Seq(License.MIT),
-    versionControl = VersionControl.github("julianmichael", "qasrl-bank"),
+    versionControl = VersionControl.github("julianmichael", "qasrl-bank-scala"),
     developers = Seq(
       Developer("julianmichael", "Julian Michael", "https://github.com/julianmichael")
     )
