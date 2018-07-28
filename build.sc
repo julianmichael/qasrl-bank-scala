@@ -5,7 +5,7 @@ import ammonite.ops._
 
 val thisScalaVersion = "2.12.6"
 val thisScalaJSVersion = "0.6.23"
-val thisPublishVersion = "0.1.0"
+val thisPublishVersion = "0.1.1-SNAPSHOT"
 
 val macroParadiseVersion = "2.1.0"
 val kindProjectorVersion = "0.9.4"
