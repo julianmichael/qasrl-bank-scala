@@ -5,14 +5,14 @@ import qasrl.bank.Data
 import cats.data.NonEmptySet
 import cats.implicits._
 import cats.effect._
+import cats.effect.implicits._
 
 import org.http4s._
 import org.http4s.implicits._
 
 import org.http4s.server.blaze._
 
-import fs2.{Stream, StreamApp}
-import fs2.StreamApp.ExitCode
+import fs2.Stream
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -25,7 +25,7 @@ object DocumentServiceWebServer {
     data: Data,
     port: Int,
     restrictedClientDomains: Option[NonEmptySet[String]] // None for no restrictions
-  ): Stream[IO, ExitCode] = {
+  )(implicit cs: ContextShift[IO], t: Timer[IO]): Stream[IO, ExitCode] = {
 
     val index = data.index
     val docs = data.documentsById
@@ -56,11 +56,11 @@ object DocumentServiceWebServer {
         )
     }
 
-    val service = CORS(bareService, corsConfig)
+    val service = CORS(bareService, corsConfig).orNotFound
 
-    BlazeBuilder[IO]
+    BlazeServerBuilder[IO]
       .bindHttp(port, "0.0.0.0")
-      .mountService(service, "/")
+      .withHttpApp(service)
       .serve
   }
 

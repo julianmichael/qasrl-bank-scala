@@ -12,10 +12,10 @@ val kindProjectorVersion = "0.9.4"
 
 // cats libs -- maintain version agreement or whatever
 val catsVersion = "1.1.0"
-val nlpdataVersion = "0.2.0"
-val qasrlVersion = "0.1.0"
-val circeVersion = "0.9.3"
-val http4sVersion = "0.18.14"
+val nlpdataVersion = "0.2.1-SNAPSHOT"
+val qasrlVersion = "0.1.1-SNAPSHOT"
+val circeVersion = "0.11.1"
+val http4sVersion = "0.20.0-M6"
 
 val monocleVersion = "1.4.0"
 
@@ -56,7 +56,6 @@ trait CommonModule extends ScalaModule with ScalafmtModule with PublishModule {
       Developer("julianmichael", "Julian Michael", "https://github.com/julianmichael")
     )
   )
-
 }
 
 trait JvmPlatform extends CommonModule {
