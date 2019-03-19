@@ -29,7 +29,7 @@ object DocumentServiceWebServer {
 
     val index = data.index
     val docs = data.documentsById
-    val searchIndex = Search.createSearchIndex(docs.values.iterator)
+    val searchIndex = Search.createSearchIndex(docs.values.toList)
 
     val bareService = HttpDocumentService.makeService(index, docs, searchIndex)
 

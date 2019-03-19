@@ -20,7 +20,7 @@ object HttpDocumentService {
   def makeService(
     index: DataIndex,
     documents: Map[DocumentId, Document],
-    searchIndex: Map[LowerCaseString, Set[DocumentId]]
+    searchIndex: Search.Index
   ) = {
 
     import qasrl.bank.JsonCodecs._
@@ -29,7 +29,12 @@ object HttpDocumentService {
     import org.http4s.dsl.io._
     import org.http4s.circe._
 
-    HttpService[IO] {
+    implicit val searchQueryEntityDecoder = jsonOf[IO, Search.Query]
+    implicit val docIdSetEntityEncoder = jsonEncoderOf[IO, Set[DocumentId]]
+    // implicit val clauseResolutionEncoder = jsonEncoderOf[IO, ClauseResolution]
+    // implicit val clauseChoiceOptEncoder = jsonEncoderOf[IO, Option[ClauseChoice]]
+
+    HttpRoutes.of[IO] {
       case GET -> Root / "index" =>
         Ok(index.asJson)
       case GET -> Root / "doc" / domain / id =>
@@ -40,10 +45,12 @@ object HttpDocumentService {
           Ok(documents.keySet.asJson)
         } else {
           val results: Set[DocumentId] = keywords
-            .map(w => searchIndex.get(w).getOrElse(Set.empty[DocumentId]))
+            .map(w => searchIndex.keyword.get(w).getOrElse(Set.empty[DocumentId]))
             .reduce(_ intersect _)
           Ok(results.asJson)
         }
+      case req @ POST -> Root / "search_full" =>
+        req.as[Search.Query].map(q => Search.execute(q, searchIndex, documents)).flatMap(Ok(_))
     }
   }
 }
