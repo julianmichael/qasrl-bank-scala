@@ -1,5 +1,7 @@
 package qasrl.bank.service
 
+import jjm.io.HttpUtil
+
 import qasrl.bank.Data
 
 import cats.data.NonEmptySet
@@ -16,9 +18,6 @@ import fs2.Stream
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import nlpdata.util.Text
-import nlpdata.util.LowerCaseStrings._
-
 object DocumentServiceWebServer {
 
   def serve(
@@ -31,7 +30,8 @@ object DocumentServiceWebServer {
     val docs = data.documentsById
     val searchIndex = Search.createSearchIndex(docs.values.toList)
 
-    val bareService = HttpDocumentService.makeService(index, docs, searchIndex)
+    val basicService = DocumentService.basic(index, docs, searchIndex)
+    val bareHttpService = HttpUtil.makeHttpPostServer[IO, DocumentService.Request](basicService)
 
     import org.http4s.server.middleware._
     import scala.concurrent.duration._
@@ -56,7 +56,7 @@ object DocumentServiceWebServer {
         )
     }
 
-    val service = CORS(bareService, corsConfig).orNotFound
+    val service = CORS(bareHttpService, corsConfig).orNotFound
 
     BlazeServerBuilder[IO]
       .bindHttp(port, "0.0.0.0")

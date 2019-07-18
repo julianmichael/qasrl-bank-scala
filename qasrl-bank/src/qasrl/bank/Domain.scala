@@ -1,9 +1,14 @@
 package qasrl.bank
 
-import nlpdata.util.LowerCaseStrings._
+import jjm.LowerCaseString
+import jjm.implicits._
 
 import cats.Order
 import cats.implicits._
+
+import io.circe.{Encoder, Decoder}
+import io.circe.Json
+import io.circe.DecodingFailure
 
 sealed trait Domain {
   import Domain._
@@ -30,4 +35,21 @@ object Domain {
     case "wikinews"  => Some(Wikinews)
     case "tqa"       => Some(TQA)
   }
+
+  implicit val domainEncoder = Encoder.instance[Domain](
+    domain => Json.fromString(domain.toString.toLowerCase)
+  )
+  implicit val domainDecoder = Decoder.instance(
+    c =>
+    c.as[String]
+      .right
+      .flatMap(
+        str =>
+        Domain.fromString(str.lowerCase) match {
+          case Some(part) => Right(part)
+          case None       => Left(DecodingFailure("Failed to parse domain value", c.history))
+        }
+      )
+  )
+
 }

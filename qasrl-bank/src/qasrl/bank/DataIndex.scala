@@ -1,8 +1,11 @@
 package qasrl.bank
 
 import scala.collection.immutable.SortedSet
+import io.circe.generic.JsonCodec
 
-case class DataIndex(
+import cats.Order.catsKernelOrderingForOrder
+
+@JsonCodec case class DataIndex(
   documents: Map[DatasetPartition, SortedSet[DocumentMetadata]],
   denseIds: SortedSet[SentenceId]
 ) {

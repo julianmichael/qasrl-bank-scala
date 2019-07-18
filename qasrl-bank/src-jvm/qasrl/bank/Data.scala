@@ -50,13 +50,12 @@ object Data {
     withoutAnswers
   }
 
-  def readDataset(path: Path): Dataset = {
+  def readDataset(path: Path): Try[Dataset] = Try {
     import java.io.FileInputStream
     import java.util.zip.GZIPInputStream
     val source = scala.io.Source.fromInputStream(
       new GZIPInputStream(new FileInputStream(path.toString))
     )
-    import qasrl.data.JsonCodecs._
     Dataset(
       SortedMap(
         source.getLines.map { line =>
@@ -67,16 +66,14 @@ object Data {
     )
   }
 
-  def writeDatasetUnzipped(path: Path, dataset: Dataset) = {
-    import qasrl.data.JsonCodecs._
+  def writeDatasetUnzipped(path: Path, dataset: Dataset) = Try {
     import io.circe.generic.auto._
     import io.circe.syntax._
     val printer = io.circe.Printer.noSpaces
     Files.write(path, printer.pretty(dataset.asJson).getBytes("UTF-8"))
   }
 
-  def writeDatasetJS(path: Path, dataset: Dataset) = {
-    import qasrl.data.JsonCodecs._
+  def writeDatasetJS(path: Path, dataset: Dataset) = Try {
     import io.circe.generic.auto._
     import io.circe.syntax._
     val printer = io.circe.Printer.noSpaces
@@ -84,9 +81,8 @@ object Data {
   }
 
   import io.circe.syntax._
-  import qasrl.bank.JsonCodecs._
 
-  def writeIndex(path: Path, index: DataIndex) = {
+  def writeIndex(path: Path, index: DataIndex) = Try {
     val printer = io.circe.Printer.noSpaces
     Files.write(path, printer.pretty(index.asJson).getBytes("UTF-8"))
   }
@@ -97,7 +93,7 @@ object Data {
     Files.write(path, res.getBytes("UTF-8"))
   }
 
-  def readIndexZipped(path: Path): DataIndex = {
+  def readIndexZipped(path: Path): Try[DataIndex] = Try {
     import java.io.FileInputStream
     import java.util.zip.GZIPInputStream
     val source = scala.io.Source.fromInputStream(
@@ -108,25 +104,23 @@ object Data {
     source.getLines.foreach { line =>
       if (jsonString == null) jsonString = line
     }
-    import qasrl.bank.JsonCodecs._
     io.circe.jawn.decode[DataIndex](jsonString) match {
       case Right(index) => index
       case Left(err)    => println(err); ???
     }
   }
 
-  def readFromQasrlBank(qasrlBankPath: Path): Try[FullData] = Try {
-    val trainExpanded = readDataset(qasrlBankPath.resolve("expanded").resolve("train.jsonl.gz"))
-    val devExpanded = readDataset(qasrlBankPath.resolve("expanded").resolve("dev.jsonl.gz"))
-
+  def readFromQasrlBank(qasrlBankPath: Path): Try[FullData] = for {
+    trainExpanded <- readDataset(qasrlBankPath.resolve("expanded").resolve("train.jsonl.gz"))
+    devExpanded <- readDataset(qasrlBankPath.resolve("expanded").resolve("dev.jsonl.gz"))
     // avoid having to read more files since result is the same anyway
-    val trainOrig = filterExpandedToOrig(trainExpanded)
-    val devOrig = filterExpandedToOrig(devExpanded)
-    val testOrig = readDataset(qasrlBankPath.resolve("orig").resolve("test.jsonl.gz"))
-
-    val devDense = readDataset(qasrlBankPath.resolve("dense").resolve("dev.jsonl.gz"))
-    val testDense = readDataset(qasrlBankPath.resolve("dense").resolve("test.jsonl.gz"))
-
+    trainOrig = filterExpandedToOrig(trainExpanded)
+    devOrig = filterExpandedToOrig(devExpanded)
+    testOrig <- readDataset(qasrlBankPath.resolve("orig").resolve("test.jsonl.gz"))
+    devDense <- readDataset(qasrlBankPath.resolve("dense").resolve("dev.jsonl.gz"))
+    testDense <- readDataset(qasrlBankPath.resolve("dense").resolve("test.jsonl.gz"))
+    index <- readIndexZipped(qasrlBankPath.resolve("index.json.gz"))
+  } yield {
     implicit val datasetMonoid = Dataset.datasetMonoid(Dataset.printMergeErrors)
     val all = trainExpanded |+| devExpanded |+| testOrig |+| devDense |+| testDense
 
@@ -138,8 +132,6 @@ object Data {
 
     val denseIds = (devDense.sentences.keySet ++ testDense.sentences.keySet)
       .map(SentenceId.fromString)
-
-    val index = readIndexZipped(qasrlBankPath.resolve("index.json.gz"))
 
     val documentsById = {
 

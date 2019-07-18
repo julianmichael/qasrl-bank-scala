@@ -3,6 +3,10 @@ package qasrl.bank
 import cats.Order
 import cats.implicits._
 
+import io.circe.{Encoder, Decoder}
+import io.circe.Json
+import io.circe.DecodingFailure
+
 case class SentenceId(
   documentId: DocumentId,
   paragraphNum: Int,
@@ -44,4 +48,21 @@ object SentenceId {
       }
       SentenceId(DocumentId(domain, docId), paragraphNum.toInt, sentenceNum.toInt)
   }
+
+  implicit val sentenceIdEncoder = Encoder.instance[SentenceId](
+    sid => Json.fromString(SentenceId.toString(sid))
+  )
+  implicit val sentenceIdDecoder = Decoder.instance(
+    c =>
+    c.as[String]
+      .right
+      .flatMap(
+        str =>
+        scala.util.Try(SentenceId.fromString(str)).toOption match {
+          case Some(part) => Right(part)
+          case None       => Left(DecodingFailure("Failed to parse sentence ID value", c.history))
+        }
+      )
+  )
+
 }

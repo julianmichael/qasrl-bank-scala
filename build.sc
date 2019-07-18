@@ -3,23 +3,19 @@ import mill.scalalib.scalafmt._
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisScalaVersion = "2.12.6"
-val thisScalaJSVersion = "0.6.23"
-val thisPublishVersion = "0.1.1-SNAPSHOT"
+val thisScalaVersion = "2.12.8"
+val thisScalaJSVersion = "0.6.27"
+val thisPublishVersion = "0.2.0-SNAPSHOT"
 
 val macroParadiseVersion = "2.1.0"
 val kindProjectorVersion = "0.9.4"
 
 // cats libs -- maintain version agreement or whatever
-val catsVersion = "1.1.0"
-val nlpdataVersion = "0.2.1-SNAPSHOT"
-val qasrlVersion = "0.1.1-SNAPSHOT"
-val circeVersion = "0.11.1"
-val http4sVersion = "0.20.0-M6"
-
-val monocleVersion = "1.4.0"
-
-val scalajsDomVersion = "0.9.6"
+val jjmVersion = "0.1.0-SNAPSHOT"
+val qasrlVersion = "0.2.0-SNAPSHOT"
+// val catsVersion = "1.6.1"
+// val http4sVersion = "0.20.6"
+// val scalajsDomVersion = "0.9.6"
 
 trait CommonModule extends ScalaModule with ScalafmtModule with PublishModule {
 
@@ -75,9 +71,6 @@ trait QasrlBankModule extends CommonModule {
 
   def ivyDeps = super.ivyDeps() ++ Agg(
     ivy"org.julianmichael::qasrl::$qasrlVersion",
-    ivy"org.typelevel::cats-free::$catsVersion",
-    ivy"io.circe::circe-core::$circeVersion",
-    ivy"io.circe::circe-generic::$circeVersion"
   )
 }
 
@@ -93,10 +86,7 @@ trait QasrlBankServiceModule extends CommonModule {
   def millSourcePath = build.millSourcePath / "qasrl-bank-service"
 
   def ivyDeps = super.ivyDeps() ++ Agg(
-    ivy"org.julianmichael::qasrl::$qasrlVersion",
-    ivy"org.typelevel::cats-free::$catsVersion",
-    ivy"io.circe::circe-core::$circeVersion",
-    ivy"io.circe::circe-generic::$circeVersion"
+    ivy"org.julianmichael::jjm-io::$jjmVersion"
   )
 }
 
@@ -106,9 +96,9 @@ object `qasrl-bank-service` extends Module {
     def moduleDeps = Seq(`qasrl-bank`.jvm)
 
     def ivyDeps = super.ivyDeps() ++ Agg(
-      ivy"org.http4s::http4s-dsl::$http4sVersion",
-      ivy"org.http4s::http4s-blaze-server::$http4sVersion",
-      ivy"org.http4s::http4s-circe::$http4sVersion"
+      // ivy"org.http4s::http4s-dsl::$http4sVersion",
+      // ivy"org.http4s::http4s-blaze-server::$http4sVersion",
+      // ivy"org.http4s::http4s-circe::$http4sVersion"
     )
   }
   object js extends QasrlBankServiceModule with JsPlatform {
@@ -116,8 +106,7 @@ object `qasrl-bank-service` extends Module {
     def moduleDeps = Seq(`qasrl-bank`.js)
 
     def ivyDeps = super.ivyDeps() ++ Agg(
-      ivy"io.circe::circe-parser::$circeVersion",
-      ivy"org.scala-js::scalajs-dom::$scalajsDomVersion"
+      // ivy"org.scala-js::scalajs-dom::$scalajsDomVersion"
     )
   }
 }
