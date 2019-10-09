@@ -13,7 +13,7 @@ val kindProjectorVersion = "0.9.4"
 // cats libs -- maintain version agreement or whatever
 val catsVersion = "1.1.0"
 val nlpdataVersion = "0.2.1-SNAPSHOT"
-val qasrlVersion = "0.1.1-SNAPSHOT"
+val qasrlVersion = "0.1.2-SNAPSHOT"
 val circeVersion = "0.11.1"
 val http4sVersion = "0.20.0-M6"
 
