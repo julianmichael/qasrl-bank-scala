@@ -1,7 +1,11 @@
 package qasrl.bank.service
 
+import jjm.io.HttpUtil
+
 import qasrl.bank.Data
 
+import cats.~>
+import cats.Id
 import cats.data.NonEmptySet
 import cats.implicits._
 import cats.effect._
@@ -16,9 +20,6 @@ import fs2.Stream
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import nlpdata.util.Text
-import nlpdata.util.LowerCaseStrings._
-
 object DocumentServiceWebServer {
 
   def serve(
@@ -31,7 +32,10 @@ object DocumentServiceWebServer {
     val docs = data.documentsById
     val searchIndex = Search.createSearchIndex(docs.values.toList)
 
-    val bareService = HttpDocumentService.makeService(index, docs, searchIndex)
+    val basicService = DocumentService.basic(index, docs, searchIndex)
+    val bareHttpService = HttpUtil.makeHttpPostServer[IO, DocumentService.Request](
+      basicService.andThenK(Lambda[Id ~> IO](IO.pure(_)))
+    )
 
     import org.http4s.server.middleware._
     import scala.concurrent.duration._
@@ -41,7 +45,7 @@ object DocumentServiceWebServer {
         CORSConfig(
           anyOrigin = true,
           anyMethod = false,
-          allowedMethods = Some(Set("GET")),
+          allowedMethods = Some(Set("GET", "POST")),
           allowCredentials = false,
           maxAge = 1.day.toSeconds
         )
@@ -50,13 +54,13 @@ object DocumentServiceWebServer {
           anyOrigin = false,
           allowedOrigins = domains.toSortedSet,
           anyMethod = false,
-          allowedMethods = Some(Set("GET")),
+          allowedMethods = Some(Set("GET", "POST")),
           allowCredentials = false,
           maxAge = 1.day.toSeconds
         )
     }
 
-    val service = CORS(bareService, corsConfig).orNotFound
+    val service = CORS(bareHttpService, corsConfig).orNotFound
 
     BlazeServerBuilder[IO]
       .bindHttp(port, "0.0.0.0")

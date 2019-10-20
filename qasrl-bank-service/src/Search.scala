@@ -1,5 +1,10 @@
 package qasrl.bank.service
 
+import jjm.LowerCaseString
+import jjm.ling.en.InflectedForms
+import jjm.ling.Text
+import jjm.implicits._
+
 import cats.Foldable
 import cats.implicits._
 
@@ -8,13 +13,11 @@ import qasrl.bank.DocumentId
 
 import qasrl.data.Sentence
 
-import nlpdata.datasets.wiktionary.InflectedForms
-import nlpdata.util.LowerCaseStrings._
-import nlpdata.util.Text
+import io.circe.generic.JsonCodec
 
 object Search {
 
-  case class Query(
+  @JsonCodec case class Query(
     predicateOpt: Option[InflectedForms],
     keywords: Set[LowerCaseString]) {
     def isEmpty = predicateOpt.isEmpty && keywords.isEmpty
