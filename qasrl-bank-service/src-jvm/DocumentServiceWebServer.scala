@@ -2,7 +2,7 @@ package qasrl.bank.service
 
 import jjm.io.HttpUtil
 
-import qasrl.bank.Data
+import qasrl.bank.ConsolidatedData
 
 import cats.~>
 import cats.Id
@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object DocumentServiceWebServer {
 
   def serve(
-    data: Data,
+    data: ConsolidatedData,
     port: Int,
     restrictedClientDomains: Option[NonEmptySet[String]] // None for no restrictions
   )(implicit cs: ContextShift[IO], t: Timer[IO]): Stream[IO, ExitCode] = {

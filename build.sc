@@ -3,11 +3,11 @@ import mill.scalalib.scalafmt._
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisScalaVersion = "2.12.8"
-val thisScalaJSVersion = "0.6.27"
-val thisPublishVersion = "0.2.0"
+val thisScalaVersion = "2.12.12"
+val thisScalaJSVersion = "0.6.33"
+val thisPublishVersion = "0.3.0-SNAPSHOT"
 
-val macroParadiseVersion = "2.1.0"
+val macroParadiseVersion = "2.1.1"
 val kindProjectorVersion = "0.9.4"
 
 // cats libs -- maintain version agreement or whatever

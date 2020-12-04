@@ -13,7 +13,7 @@ import cats.implicits._
 import qasrl.data.Dataset
 import qasrl.data.Sentence
 
-case class FullData(
+case class FullQasrlData(
   index: DataIndex,
   all: Dataset,
   documentsById: Map[DocumentId, Document],
@@ -25,12 +25,12 @@ case class FullData(
   devDense: Dataset,
   testDense: Dataset
 ) {
-  def small = Data(index, all, documentsById)
+  def small = ConsolidatedData(index, ConsolidatedDataset.fromDataset(all), documentsById)
 }
 
-case class Data(
+case class ConsolidatedData(
   index: DataIndex,
-  all: Dataset,
+  all: ConsolidatedDataset,
   documentsById: Map[DocumentId, Document]
 )
 
@@ -38,19 +38,35 @@ object Data {
 
   def filterExpandedToOrig(dataset: Dataset) = {
     val withoutQuestions =
-      dataset.filterQuestionSources(qs => QuestionSource.fromString(qs).isTurker)
+      dataset.filterQuestionSources(qs => QuestionSource.fromString(qs).isQasrlTurker)
     val withoutAnswers = Dataset.questionLabels.modify(
       ql =>
         ql.copy(
           answerJudgments = ql.answerJudgments.filter(
-            al => AnswerSource.fromString(al.sourceId).round.isOriginal
+            al => AnswerSource.fromString(al.sourceId).round.isQasrlOriginal
           )
       )
     )(withoutQuestions)
     withoutAnswers
   }
 
-  def readDataset(path: Path): Try[Dataset] = Try {
+  def readConsolidatedDataset(path: Path): Try[ConsolidatedDataset] = Try {
+    import java.io.FileInputStream
+    import java.util.zip.GZIPInputStream
+    val source = scala.io.Source.fromInputStream(
+      new GZIPInputStream(new FileInputStream(path.toString))
+    )
+    ConsolidatedDataset(
+      SortedMap(
+        source.getLines.map { line =>
+          val sentence = io.circe.jawn.decode[ConsolidatedSentence](line).right.get
+          sentence.sentenceId -> sentence
+        }.toSeq: _*
+      )
+    )
+  }
+
+  def readQasrlDataset(path: Path): Try[Dataset] = Try {
     import java.io.FileInputStream
     import java.util.zip.GZIPInputStream
     val source = scala.io.Source.fromInputStream(
@@ -110,15 +126,15 @@ object Data {
     }
   }
 
-  def readFromQasrlBank(qasrlBankPath: Path): Try[FullData] = for {
-    trainExpanded <- readDataset(qasrlBankPath.resolve("expanded").resolve("train.jsonl.gz"))
-    devExpanded <- readDataset(qasrlBankPath.resolve("expanded").resolve("dev.jsonl.gz"))
+  def readFromQasrlBank(qasrlBankPath: Path): Try[FullQasrlData] = for {
+    trainExpanded <- readQasrlDataset(qasrlBankPath.resolve("expanded").resolve("train.jsonl.gz"))
+    devExpanded <- readQasrlDataset(qasrlBankPath.resolve("expanded").resolve("dev.jsonl.gz"))
     // avoid having to read more files since result is the same anyway
     trainOrig = filterExpandedToOrig(trainExpanded)
     devOrig = filterExpandedToOrig(devExpanded)
-    testOrig <- readDataset(qasrlBankPath.resolve("orig").resolve("test.jsonl.gz"))
-    devDense <- readDataset(qasrlBankPath.resolve("dense").resolve("dev.jsonl.gz"))
-    testDense <- readDataset(qasrlBankPath.resolve("dense").resolve("test.jsonl.gz"))
+    testOrig <- readQasrlDataset(qasrlBankPath.resolve("orig").resolve("test.jsonl.gz"))
+    devDense <- readQasrlDataset(qasrlBankPath.resolve("dense").resolve("dev.jsonl.gz"))
+    testDense <- readQasrlDataset(qasrlBankPath.resolve("dense").resolve("test.jsonl.gz"))
     index <- readIndexZipped(qasrlBankPath.resolve("index.json.gz"))
   } yield {
     implicit val datasetMonoid = Dataset.datasetMonoid(Dataset.printMergeErrors)
@@ -148,7 +164,7 @@ object Data {
             title
           )
           val metadata = docIdToMeta(docId)
-          Document(metadata, SortedSet(sentences.toSeq: _*))
+          Document(metadata, SortedSet(sentences.toSeq.map(ConsolidatedSentence.fromSentence): _*))
       }.toSeq
 
       val documentsById = documents.map(doc => doc.metadata.id -> doc).toMap
@@ -156,7 +172,7 @@ object Data {
       documentsById
     }
 
-    FullData(
+    FullQasrlData(
       index,
       all,
       documentsById,
@@ -167,6 +183,34 @@ object Data {
       devExpanded,
       devDense,
       testDense
+    )
+  }
+
+  def loadQANomData(qasrlData: ConsolidatedData, qaNomPath: Path): Try[ConsolidatedData] = for {
+    train <- readConsolidatedDataset(qaNomPath.resolve("train.jsonl.gz"))
+    dev   <- readConsolidatedDataset(qaNomPath.resolve("dev.jsonl.gz"))
+    test  <- readConsolidatedDataset(qaNomPath.resolve("test.jsonl.gz"))
+  } yield {
+    implicit val consolidatedDatasetMonoid = ConsolidatedDataset
+      .consolidatedDatasetMonoid(Dataset.printMergeErrors)
+    val allQANom = train |+| dev |+| test
+    // def sentenceIdToPart(sid: SentenceId) = {
+    //   qasrlData.index.documents.iterator.find(_._2.exists(_.id == sid.documentId)).map(_._1).get
+    // }
+    val qaNomIds = allQANom.sentences.keySet.map(SentenceId.fromString)
+    val index = qasrlData.index.copy(qaNomIds = qaNomIds)
+
+    val all = qasrlData.all |+| allQANom
+
+    val docIdToMeta = index.documents.values.reduce(_ union _).map(meta => meta.id -> meta).toMap
+    val documentsById = all.sentences.values.toVector
+      .groupBy(s => SentenceId.fromString(s.sentenceId).documentId)
+      .map { case (docId, sentences) =>
+        val metadata = docIdToMeta(docId)
+        docId -> Document(metadata, SortedSet(sentences: _*))
+      }
+    ConsolidatedData(
+      index, all, documentsById
     )
   }
 }

@@ -8,6 +8,7 @@ import jjm.implicits._
 import cats.Foldable
 import cats.implicits._
 
+import qasrl.bank.ConsolidatedSentence
 import qasrl.bank.Document
 import qasrl.bank.DocumentId
 
@@ -44,7 +45,7 @@ object Search {
   }
 
   def getQueryMatchesInSentence(
-    sentence: Sentence,
+    sentence: ConsolidatedSentence,
     query: Search.Query
   ): Set[Int] = {
     val predicates = sentence.verbEntries.values.toList

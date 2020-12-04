@@ -7,4 +7,6 @@ import qasrl.data.QuestionLabel
 package object bank {
   implicit val qasrlDataSentenceOrder =
     Order.by[Sentence, SentenceId](s => SentenceId.fromString(s.sentenceId))
+  implicit val qasrlDataConsolidatedSentenceOrder =
+    Order.by[ConsolidatedSentence, SentenceId](s => SentenceId.fromString(s.sentenceId))
 }

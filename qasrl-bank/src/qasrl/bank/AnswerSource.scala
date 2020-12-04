@@ -6,11 +6,12 @@ import cats.implicits._
 case class AnswerSource(turkerId: String, round: AnnotationRound)
 
 object AnswerSource {
-  private[this] val TurkerMatch = "turk-qasrl2.0-([0-9]+)-?(.*)".r
+  private[this] val QasrlTurkerMatch = "turk-qasrl2.0-([0-9]+)-?(.*)".r
+  private[this] val QANomTurkerMatch = "turk-qanom-([0-9]+)".r
   import AnnotationRound._
 
   def fromString(s: String) = s match {
-    case TurkerMatch(id, round) =>
+    case QasrlTurkerMatch(id, round) =>
       AnswerSource(
         id,
         round match {
@@ -19,6 +20,7 @@ object AnswerSource {
           case "eval"      => Eval
         }
       )
+    case QANomTurkerMatch(id) => AnswerSource(id, QANom)
   }
 
   implicit val answerSourceOrder = Order.whenEqual(
