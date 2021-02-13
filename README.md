@@ -1,3 +1,6 @@
+MOVED: I folded this into the repository at
+[julianmichael/qasrl](https://github.com/julianmichael/qasrl).
+
 # QA-SRL Bank Scala Client
 
 This directory houses the Scala client library for the QA-SRL Bank 2.0 dataset.
