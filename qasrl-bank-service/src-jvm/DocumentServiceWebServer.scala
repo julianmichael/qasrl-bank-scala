@@ -18,7 +18,8 @@ import org.http4s.server.blaze._
 
 import fs2.Stream
 
-import scala.concurrent.ExecutionContext.Implicits.global
+// import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 object DocumentServiceWebServer {
 
@@ -26,7 +27,7 @@ object DocumentServiceWebServer {
     data: ConsolidatedData,
     port: Int,
     restrictedClientDomains: Option[NonEmptySet[String]] // None for no restrictions
-  )(implicit cs: ContextShift[IO], t: Timer[IO]): Stream[IO, ExitCode] = {
+  )(implicit cs: ContextShift[IO], t: Timer[IO], ec: ExecutionContext): Stream[IO, ExitCode] = {
 
     val index = data.index
     val docs = data.documentsById
@@ -62,7 +63,7 @@ object DocumentServiceWebServer {
 
     val service = CORS(bareHttpService, corsConfig).orNotFound
 
-    BlazeServerBuilder[IO]
+    BlazeServerBuilder[IO](ec)
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(service)
       .serve

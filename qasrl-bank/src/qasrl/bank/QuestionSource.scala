@@ -22,8 +22,8 @@ object QuestionSource {
   private[this] val QasrlTurkerMatch = "turk-qasrl2.0-([0-9]+)".r
   private[this] val QANomTurkerMatch = "turk-qanom-([0-9]+)".r
 
-  def fromString(s: String) = s match {
-    case ModelMatch(version) => Model(version)
+  def fromString(s: String): QuestionSource = s match {
+    case ModelMatch(version)      => Model(version)
     case QasrlTurkerMatch(id)     => QasrlTurker(id)
     case QANomTurkerMatch(id)     => QANomTurker(id)
   }

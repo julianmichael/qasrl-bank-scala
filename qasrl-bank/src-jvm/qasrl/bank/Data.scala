@@ -86,26 +86,26 @@ object Data {
     import io.circe.generic.auto._
     import io.circe.syntax._
     val printer = io.circe.Printer.noSpaces
-    Files.write(path, printer.pretty(dataset.asJson).getBytes("UTF-8"))
+    Files.write(path, printer.print(dataset.asJson).getBytes("UTF-8"))
   }
 
   def writeDatasetJS(path: Path, dataset: Dataset) = Try {
     import io.circe.generic.auto._
     import io.circe.syntax._
     val printer = io.circe.Printer.noSpaces
-    Files.write(path, ("var dataset = " + printer.pretty(dataset.asJson) + ";").getBytes("UTF-8"))
+    Files.write(path, ("var dataset = " + printer.print(dataset.asJson) + ";").getBytes("UTF-8"))
   }
 
   import io.circe.syntax._
 
   def writeIndex(path: Path, index: DataIndex) = Try {
     val printer = io.circe.Printer.noSpaces
-    Files.write(path, printer.pretty(index.asJson).getBytes("UTF-8"))
+    Files.write(path, printer.print(index.asJson).getBytes("UTF-8"))
   }
 
   def writeIndexJS(path: Path, index: DataIndex) = {
     val printer = io.circe.Printer.noSpaces
-    val res = "var dataMetaIndex = " + printer.pretty(index.asJson) + ";"
+    val res = "var dataMetaIndex = " + printer.print(index.asJson) + ";"
     Files.write(path, res.getBytes("UTF-8"))
   }
 

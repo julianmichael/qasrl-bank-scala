@@ -3,18 +3,21 @@ import mill.scalalib.scalafmt._
 import coursier.maven.MavenRepository
 import ammonite.ops._
 
-val thisScalaVersion = "2.12.12"
-val thisScalaJSVersion = "0.6.33"
-val thisPublishVersion = "0.3.0-SNAPSHOT"
+val scalaVersions = List(
+  "2.12.12",
+  // "2.13.4"
+)
+val thisScalaJSVersion = "1.4.0"
+val thisPublishVersion = "0.4.0-SNAPSHOT"
 
 val macroParadiseVersion = "2.1.1"
-val kindProjectorVersion = "0.9.4"
+val kindProjectorVersion = "0.11.3"
 
 // cats libs -- maintain version agreement or whatever
-val jjmVersion = "0.1.0"
-val qasrlVersion = "0.2.0"
+val jjmVersion = "0.2.0-SNAPSHOT"
+val qasrlVersion = "0.3.0-SNAPSHOT"
 
-trait CommonModule extends ScalaModule with ScalafmtModule with PublishModule {
+trait CommonModule extends CrossScalaModule with ScalafmtModule with PublishModule {
 
   def platformSegment: String
 
@@ -22,8 +25,6 @@ trait CommonModule extends ScalaModule with ScalafmtModule with PublishModule {
     millSourcePath / s"src",
     millSourcePath / s"src-$platformSegment"
   )
-
-  def scalaVersion = thisScalaVersion
 
   def scalacOptions = Seq(
     "-unchecked",
@@ -34,7 +35,7 @@ trait CommonModule extends ScalaModule with ScalafmtModule with PublishModule {
   )
   def scalacPluginIvyDeps = super.scalacPluginIvyDeps() ++ Agg(
     ivy"org.scalamacros:::paradise:$macroParadiseVersion",
-    ivy"org.spire-math::kind-projector:$kindProjectorVersion"
+    ivy"org.typelevel:::kind-projector:$kindProjectorVersion"
   )
 
   def publishVersion = thisPublishVersion
@@ -72,8 +73,10 @@ trait QasrlBankModule extends CommonModule {
 }
 
 object `qasrl-bank` extends Module {
-  object jvm extends QasrlBankModule with JvmPlatform
-  object js extends QasrlBankModule with JsPlatform
+  class Jvm(val crossScalaVersion: String) extends QasrlBankModule with JvmPlatform
+  object jvm extends Cross[Jvm](scalaVersions: _*)
+  class Js(val crossScalaVersion: String) extends QasrlBankModule with JsPlatform
+  object js extends Cross[Js](scalaVersions: _*)
 }
 
 trait QasrlBankServiceModule extends CommonModule {
@@ -88,12 +91,12 @@ trait QasrlBankServiceModule extends CommonModule {
 }
 
 object `qasrl-bank-service` extends Module {
-  object jvm extends QasrlBankServiceModule with JvmPlatform {
-
-    def moduleDeps = Seq(`qasrl-bank`.jvm)
+  class Jvm(val crossScalaVersion: String) extends QasrlBankServiceModule with JvmPlatform {
+    def moduleDeps = Seq(`qasrl-bank`.jvm(crossScalaVersion))
   }
-  object js extends QasrlBankServiceModule with JsPlatform {
-
-    def moduleDeps = Seq(`qasrl-bank`.js)
+  object jvm extends Cross[Jvm](scalaVersions: _*)
+  class Js(val crossScalaVersion: String) extends QasrlBankServiceModule with JsPlatform {
+    def moduleDeps = Seq(`qasrl-bank`.js(crossScalaVersion))
   }
+  object js extends Cross[Js](scalaVersions: _*)
 }
